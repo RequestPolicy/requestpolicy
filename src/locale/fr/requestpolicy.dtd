@@ -63,7 +63,7 @@
 <!ENTITY requestLog.openDestinationInNewTab "Ouvrir la destination dans un nouvel onglet">
 <!ENTITY requestLog.clear "Effacer">
 <!ENTITY initialSetup.title "Installation initiale">
-<!ENTITY initialSetup.whitelist.caption "Add sites to your cross-site whitelist">
+<!ENTITY initialSetup.whitelist.caption "Ajouter de ssites à votre liste blanche de sites croisés">
 <!ENTITY initialSetup.whitelist.description "Les sites dans ces listes ont été choisis (1) soit parce qu'ils impliquent des requêtes entre des listes appartenant à la même entreprise, (2) soit parce qu'ils réduisent les problèmes que vous pourriez rencontrer et n'ont qu'un faible impact sur la sécurité et les données personnelles.>
 <!ENTITY initialSetup.region.international "International">
 <!ENTITY initialSetup.region.americas "Amérique">
