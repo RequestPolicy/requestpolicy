@@ -1910,6 +1910,48 @@ RequestPolicyService.prototype = {
     this._lastShouldLoadCheck.origin = originUri;
     this._lastShouldLoadCheck.result = result;
   },
+  
+  /**
+   * unwrap URIs implementing nsINestedURI and view-source URIs
+   * to get at the underlying transport protocol
+   * 
+   * @param nsIURI uri
+   * @return {nsIURI} The unwrapped URI
+   */
+  _unWrapURI : function(uri) {
+    while(true) {
+      var oldSpec = requestpolicy.mod.DomainUtil.stripFragment(uri.spec);
+      
+      // unwrap any sort of nested URI (jar uris, etc)
+      if(uri instanceof Components.interfaces.nsINestedURI) {
+        uri = uri.QueryInterface(Components.interfaces.nsINestedURI).innermostURI;
+      }
+      // view-source URIs are handled here as well, since they don't
+      // implement nsINestedURI even though they can be infinitely nested???
+      else if (uri.scheme == "view-source") {
+        //get everything after the initial scheme
+        var newSpec = oldSpec.split(":").slice(1).join(":");
+        uri = requestpolicy.mod.DomainUtil.getUriObject(newSpec);
+      }
+      // A meaningful, non-nestable uri, stop unwrapping.
+      else {
+        break;
+      }
+    }
+    return uri;
+  },
+  
+ /**
+   * Check if a URI points to a local jar file
+   * @param nsIURI uri
+   * @return {Boolean} true if the URI points to a local jar file
+   */
+  _isLocalJarURI: function(uri) {
+    if(uri.scheme == "jar") {
+      return (this._unWrapURI(uri).scheme == "file");
+    }
+    return false;
+  },
 
   /**
    * Determines if a request is only related to internal resources.
@@ -1944,6 +1986,23 @@ RequestPolicyService.prototype = {
     if (aRequestOrigin == undefined || aRequestOrigin == null) {
       return true;
     }
+    
+    // Special-case access to local jars by chrome and resource URIs
+    // This is necessary for resource:/// and probably some addons.
+    
+    // TODO: Check if it's possible or necessary to lock this down more.
+    if (aRequestOrigin.scheme == "chrome"
+        || aRequestOrigin.scheme == "resource"
+        || this._isLocalJarURI(aRequestOrigin)) {
+      if(this._isLocalJarURI(aContentLocation)) {
+        return true;
+      }
+    }
+    
+    // Done with special-casing jar URIs, unwrap jar URIs if we're dealing
+    // with any.
+    aContentLocation = this._unWrapURI(aContentLocation);
+    aRequestOrigin = this._unWrapURI(aRequestOrigin);
 
     try {
       // The asciiHost values will exist but be empty strings for the "file"
@@ -2023,7 +2082,7 @@ RequestPolicyService.prototype = {
     }
     return false;
   },
-
+  
   // the content policy that does something useful
   mainContentPolicy : {
 
@@ -2035,6 +2094,13 @@ RequestPolicyService.prototype = {
         if (this._isInternalRequest(aContentLocation, aRequestOrigin)) {
           return CP_OK;
         }
+        
+        // Remove useless jar and view-source schemes.
+        var aOldContentLocation = aContentLocation;
+        var aOldRequestOrigin = aRequestOrigin;
+        
+        aContentLocation = this._unWrapURI(aContentLocation);
+        aRequestOrigin = this._unWrapURI(aRequestOrigin);
 
         // We don't need to worry about ACE formatted IDNs because it seems
         // that they'll automatically be converted to UTF8 format before we
@@ -2044,6 +2110,26 @@ RequestPolicyService.prototype = {
             .stripFragment(aRequestOrigin.spec);
         var dest = requestpolicy.mod.DomainUtil
             .stripFragment(aContentLocation.spec);
+
+        // Log view-source and jar uris being unwrapped
+        if(aOldRequestOrigin != aRequestOrigin) {
+          var oldOrigin = requestpolicy.mod.DomainUtil
+            .stripFragment(aOldRequestOrigin.spec);
+          
+          requestpolicy.mod.Logger.info(
+              requestpolicy.mod.Logger.TYPE_CONTENT,
+              "Considering origin <"
+                  + oldOrigin + "> to be origin <" + origin + ">");
+        }
+        if(aOldContentLocation != aContentLocation) {
+          var oldDest = requestpolicy.mod.DomainUtil
+            .stripFragment(aOldContentLocation.spec);
+          
+          requestpolicy.mod.Logger.info(
+              requestpolicy.mod.Logger.TYPE_CONTENT,
+              "Considering destination <"
+                  + oldDest + "> to be destination <" + dest + ">");
+        }
 
         // Fx 16 changed the following: 1) we should be able to count on the
         // referrer (aRequestOrigin) being set to something besides
@@ -2073,26 +2159,6 @@ RequestPolicyService.prototype = {
                   + origin + "> to be origin <" + newOrigin + ">");
           origin = newOrigin;
           aRequestOrigin = requestpolicy.mod.DomainUtil.getUriObject(origin);
-        }
-
-        if (aRequestOrigin.scheme == "view-source") {
-          var newOrigin = origin.split(":").slice(1).join(":");
-          requestpolicy.mod.Logger.info(
-            requestpolicy.mod.Logger.TYPE_CONTENT,
-            "Considering view-source origin <"
-              + origin + "> to be origin <" + newOrigin + ">");
-          origin = newOrigin;
-          aRequestOrigin = requestpolicy.mod.DomainUtil.getUriObject(origin);
-        }
-
-        if (aContentLocation.scheme == "view-source") {
-          var newDest = dest.split(":").slice(1).join(":");
-          requestpolicy.mod.Logger.info(
-              requestpolicy.mod.Logger.TYPE_CONTENT,
-              "Considering view-source destination <"
-                  + dest + "> to be destination <" + newDest + ">");
-          dest = newDest;
-          aContentLocation = requestpolicy.mod.DomainUtil.getUriObject(dest);
         }
 
         if (origin == "about:blank" && aContext) {
