@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>RequestPolicy jar: URI Test</title>
+</head>
+<body>
+    <style>
+        /* RequestPolicy messes with the style attr when it blocks an image, detect it. */
+        #detectRP[style*="oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB"] {
+            height:100px; 
+            width:100px; 
+            display:block; 
+            background:blue;
+        }
+    </style>
+    <img id="detectRP" src="http://garbage.domain/foo" />
+    <img style="height:100px !important; width:100px !important; display:block; background:green;" src="jar:http://garbage.domain/foo!/s" />
+    <p>If you only see a blue square above, congrats! RequestPolicy is blocking jar URIs properly.</p>
+    <p>If you see two squares, one green and one blue, cross-domain requests can be pushed through using the jar scheme.</p>
+    <p>If you see anything else... are you even using RequestPolicy?</p>
+</body>
