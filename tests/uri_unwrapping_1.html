@@ -1,0 +1,23 @@
+<html>
+<head>
+</head>
+<body>
+
+<!-- The images will always fail to load due to security precautions in firefox,
+     instead, check the webserver logs to verify the GET was not made. -->
+<p><img src="jar:http://127.0.0.1/cross-site-image.png!/foo" /></p>
+
+<!-- Make sure regular view-source links are unwrapped -->
+<p><img src="view-source:http://127.0.0.1/cross-site-image.png" /></p>
+
+<!-- Make sure nested jar URIs get unwrapped (These may not work anyways) -->
+<p><img src="jar:jar:http://127.0.0.1/cross-site-image.png!/foo!/bar" /></p>
+
+<!-- Host should be fully unwrapped for view-source as well -->
+<p><img src="jar:view-source:view-source:http://127.0.0.1/cross-site-image.png!/foo" /></p>
+
+<!-- Make sure this doesn't break the resource:/// uri -->
+<p><img src="resource:///chrome/browser/skin/classic/browser/Geolocation-16.png" /></p>
+
+</body>
+</html>
