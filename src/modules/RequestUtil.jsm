@@ -64,7 +64,8 @@ var RequestUtil = {
     var rejectedRequests = {};
     if (currentUri in this._rpServiceJSObject._rejectedRequests) {
       for (var ident in this._rpServiceJSObject._rejectedRequests[currentUri]) {
-        rejectedRequests[ident] = true;
+        rejectedRequests[ident] =
+            this._rpServiceJSObject._rejectedRequests[currentUri][ident].count;
       }
     }
     // Add the rejected requests from other origins within this page that have
@@ -75,7 +76,8 @@ var RequestUtil = {
           this.dumpRequestSet(this._rpServiceJSObject._rejectedRequests[i],
               "Rejected requests of " + i);
           for (var ident in this._rpServiceJSObject._rejectedRequests[i]) {
-            rejectedRequests[ident] = true;
+            rejectedRequests[ident] =
+                    this._rpServiceJSObject._rejectedRequests[i][ident].count;
           }
         }
       }

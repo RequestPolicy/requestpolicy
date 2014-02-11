@@ -222,7 +222,8 @@ requestpolicy.menu = {
           "All rejected requests (including from other origins)");
       for (var destIdentifier in rejectedRequests) {
         var submenu = this.addBlockedDestination(this._menu,
-            this._blockedDestinationsBeforeReferenceItem, destIdentifier, true);
+            this._blockedDestinationsBeforeReferenceItem,
+            destIdentifier, rejectedRequests[destIdentifier], true);
         this.addMenuItemTemporarilyAllowDest(submenu, destIdentifier);
         if (!privateBrowsingEnabled) {
           this.addMenuItemAllowDest(submenu, destIdentifier);
@@ -347,9 +348,10 @@ requestpolicy.menu = {
     return menuPopup;
   },
 
-  addBlockedDestination : function(parentMenu, itemToInsertBefore, label,
-      isMainMenu) {
+  addBlockedDestination : function(parentMenu, itemToInsertBefore,
+      identifier, hitCount, isMainMenu) {
     var menu = document.createElement("menu");
+    var label = identifier + " (" + hitCount + ")";
     // This seems to be the easiest way to deal with indenting ltr/rtl text,
     // given that there was either a bug in the babelzilla system or having the
     // spaces in the properties files was confusing the translators. Don't want
@@ -562,7 +564,8 @@ requestpolicy.menu = {
         null, originIdentifier, otherOrigins);
     for (var i in blockedIdentifiers) {
       menu.meaningfulChildCount++;
-      var submenu = this.addBlockedDestination(menu, menu.firstChild, i, false);
+      var submenu = this.addBlockedDestination(menu, menu.firstChild,
+          i, blockedIdentifiers[i], false);
       this._populateOtherOriginsMenuItemBlockedDestinations(submenu,
           originIdentifier, i);
     }
